@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react'
+import { Plus, Pencil, Trash2, RefreshCw, ShoppingCart } from 'lucide-react'
 import { useApp } from '../store/store'
 import { CLASSES, CORES_CLASSE } from '../lib/calculos'
 import { brl, num, pctSinal } from '../lib/formato'
@@ -33,10 +33,40 @@ function ClasseTag({ classe }) {
 }
 
 export default function Carteira() {
-  const { posicoes, resumo, addPosicao, editPosicao, removePosicao, cot, atualizar } = useApp()
+  const { posicoes, resumo, addPosicao, editPosicao, removePosicao, comprarPosicao, cot, atualizar } =
+    useApp()
   const [aberto, setAberto] = useState(false)
   const [editId, setEditId] = useState(null)
   const [form, setForm] = useState(vazia)
+
+  // Modal de compra (aporte) com cálculo de preço médio.
+  const [compraAberto, setCompraAberto] = useState(false)
+  const [compraPos, setCompraPos] = useState(null)
+  const [compraForm, setCompraForm] = useState({ quantidade: '', preco: '' })
+
+  function abrirCompra(p) {
+    setCompraPos(p)
+    setCompraForm({ quantidade: '', preco: p.temCotacao ? String(p.precoAtual) : '' })
+    setCompraAberto(true)
+  }
+
+  function confirmarCompra() {
+    const q = parseFloat(compraForm.quantidade) || 0
+    const pr = parseFloat(compraForm.preco) || 0
+    if (!compraPos || q <= 0 || pr <= 0) return
+    comprarPosicao(compraPos.id, q, pr)
+    setCompraAberto(false)
+  }
+
+  // Prévia do novo preço médio enquanto o usuário digita.
+  const cq = parseFloat(compraForm.quantidade) || 0
+  const cpr = parseFloat(compraForm.preco) || 0
+  const novaQtd = compraPos ? compraPos.quantidade + cq : 0
+  const novoMedio =
+    compraPos && novaQtd > 0
+      ? (compraPos.quantidade * compraPos.precoMedio + cq * cpr) / novaQtd
+      : compraPos?.precoMedio || 0
+  const simboloCompra = compraPos?.moeda === 'USD' ? 'US$ ' : 'R$ '
 
   function abrirNovo() {
     setEditId(null)
@@ -168,6 +198,14 @@ export default function Carteira() {
                   <td className="px-5 py-3.5 text-right sm:px-6">
                     <div className="flex justify-end gap-1">
                       <button
+                        onClick={() => abrirCompra(p)}
+                        className="rounded-lg p-1.5 text-slate-400 transition hover:bg-brand-soft hover:text-brand"
+                        aria-label="Comprar mais"
+                        title="Comprar mais (recalcula o preço médio)"
+                      >
+                        <ShoppingCart size={16} />
+                      </button>
+                      <button
                         onClick={() => abrirEdicao(p)}
                         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-ink"
                         aria-label="Editar"
@@ -266,6 +304,94 @@ export default function Carteira() {
             <input className={inputCls} type="number" step="any" value={form.precoAtualManual} onChange={set('precoAtualManual')} placeholder="—" />
           </label>
         </div>
+      </Modal>
+
+      {/* Modal de compra (aporte) */}
+      <Modal
+        open={compraAberto}
+        onClose={() => setCompraAberto(false)}
+        title={compraPos ? `Comprar ${compraPos.ticker}` : 'Comprar'}
+        footer={
+          <>
+            <button
+              onClick={() => setCompraAberto(false)}
+              className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={confirmarCompra}
+              disabled={cq <= 0 || cpr <= 0}
+              className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow-brand transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Confirmar compra
+            </button>
+          </>
+        }
+      >
+        {compraPos && (
+          <div className="space-y-4">
+            <div className="rounded-xl bg-canvas p-3 text-sm">
+              <p className="text-muted">
+                Posição atual: <span className="font-semibold text-ink">{num(compraPos.quantidade, compraPos.quantidade % 1 === 0 ? 0 : 4)}</span> un. ·
+                preço médio <span className="font-semibold text-ink">{simboloCompra}{num(compraPos.precoMedio, 2)}</span>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <label className="text-sm">
+                <span className="mb-1.5 block font-medium text-slate-600">Quantidade comprada</span>
+                <input
+                  className={inputCls}
+                  type="number"
+                  step="any"
+                  autoFocus
+                  value={compraForm.quantidade}
+                  onChange={(e) => setCompraForm((f) => ({ ...f, quantidade: e.target.value }))}
+                  placeholder="5"
+                />
+              </label>
+              <label className="text-sm">
+                <span className="mb-1.5 block font-medium text-slate-600">Preço unitário pago</span>
+                <input
+                  className={inputCls}
+                  type="number"
+                  step="any"
+                  value={compraForm.preco}
+                  onChange={(e) => setCompraForm((f) => ({ ...f, preco: e.target.value }))}
+                  placeholder="38.42"
+                />
+              </label>
+            </div>
+
+            {/* Prévia do resultado */}
+            <div className="rounded-xl border border-brand/20 bg-brand-soft p-4">
+              <p className="text-xs font-medium text-brand-dark/70">Depois da compra</p>
+              <div className="mt-2 flex items-center justify-between text-sm">
+                <span className="text-slate-600">Nova quantidade</span>
+                <span className="font-bold text-ink">
+                  {num(novaQtd, novaQtd % 1 === 0 ? 0 : 4)} un.
+                </span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-sm">
+                <span className="text-slate-600">Novo preço médio</span>
+                <span className="font-bold text-ink">
+                  {simboloCompra}
+                  {num(novoMedio, 2)}
+                </span>
+              </div>
+              {cq > 0 && cpr > 0 && (
+                <div className="mt-1 flex items-center justify-between text-sm">
+                  <span className="text-slate-600">Custo desta compra</span>
+                  <span className="font-semibold text-ink">
+                    {simboloCompra}
+                    {num(cq * cpr, 2)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   )

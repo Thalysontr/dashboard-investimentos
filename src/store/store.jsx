@@ -89,6 +89,20 @@ export function AppProvider({ children }) {
     setCarteira((arr) => arr.map((x) => (x.id === id ? { ...x, ...patch } : x)))
   const removePosicao = (id) => setCarteira((arr) => arr.filter((x) => x.id !== id))
 
+  // Registra uma compra: soma a quantidade e recalcula o preço médio ponderado.
+  const comprarPosicao = (id, quantidade, preco) =>
+    setCarteira((arr) =>
+      arr.map((p) => {
+        if (p.id !== id) return p
+        const novaQtd = p.quantidade + quantidade
+        const novoMedio =
+          novaQtd > 0
+            ? (p.quantidade * p.precoMedio + quantidade * preco) / novaQtd
+            : p.precoMedio
+        return { ...p, quantidade: novaQtd, precoMedio: novoMedio }
+      }),
+    )
+
   const setAlvoAtivo = (id, pct) => setAlvoAtivos((m) => ({ ...m, [id]: pct }))
 
   // Helpers de metas
@@ -101,6 +115,7 @@ export function AppProvider({ children }) {
     addPosicao,
     editPosicao,
     removePosicao,
+    comprarPosicao,
     alvo,
     setAlvo,
     alvoAtivos,
