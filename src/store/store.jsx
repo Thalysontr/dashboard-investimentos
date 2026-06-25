@@ -15,7 +15,7 @@ import {
   metasIniciais,
   doutrinaInicial,
 } from '../data/dadosIniciais'
-import { buscarCotacoes, getHistorico, registrarSnapshot, CACHE_TTL_MS } from '../services/cotacoes'
+import { buscarCotacoes, getHistorico, registrarSnapshot } from '../services/cotacoes'
 import { calcularPosicoes, resumoCarteira } from '../lib/calculos'
 
 const Ctx = createContext(null)
@@ -26,6 +26,7 @@ export function AppProvider({ children }) {
   const [alvo, setAlvo] = useLocalState('alvo_v1', alocacaoAlvoInicial)
   const [alvoAtivos, setAlvoAtivos] = useLocalState('alvoAtivos_v1', alvoAtivosInicial)
   const [metas, setMetas] = useLocalState('metas_v1', metasIniciais)
+  const [intervaloMin, setIntervaloMin] = useLocalState('intervaloMin_v1', 15)
   const [doutrina, setDoutrina] = useLocalState('doutrina_v1', doutrinaInicial)
 
   const [cot, setCot] = useState({
@@ -60,12 +61,14 @@ export function AppProvider({ children }) {
   const atualizarRef = useRef(atualizar)
   atualizarRef.current = atualizar
 
-  // Primeira carga (usa cache se < 15 min) + revalidação automática a cada 15 min.
+  // Primeira carga + revalidação automática no intervalo escolhido.
+  // O intervalo é reagendado sempre que `intervaloMin` muda.
   useEffect(() => {
     atualizarRef.current(false)
-    const id = setInterval(() => atualizarRef.current(true), CACHE_TTL_MS)
+    const ms = Math.max(1, intervaloMin) * 60 * 1000
+    const id = setInterval(() => atualizarRef.current(true), ms)
     return () => clearInterval(id)
-  }, [])
+  }, [intervaloMin])
 
   const posicoes = useMemo(
     () => calcularPosicoes(carteira, cot.precos, cot.cambioUsdBrl),
@@ -109,6 +112,8 @@ export function AppProvider({ children }) {
     removeMeta,
     doutrina,
     setDoutrina,
+    intervaloMin,
+    setIntervaloMin,
     cot,
     atualizar,
     historico,

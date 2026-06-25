@@ -1,13 +1,17 @@
 import { useState } from 'react'
-import { Save, RotateCcw, KeyRound, Info } from 'lucide-react'
+import { Save, RotateCcw, KeyRound, Info, Timer } from 'lucide-react'
 import { getConfigApis, setConfigApis, CHAVES_STORAGE } from '../services/cotacoes'
 import { limparTudo } from '../lib/armazenamento'
+import { useApp } from '../store/store'
 import DashboardCard from '../components/DashboardCard'
+
+const OPCOES_INTERVALO = [5, 15, 30, 60]
 
 const inputCls =
   'w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand/40 focus:bg-white focus:ring-4 focus:ring-brand/10'
 
 export default function Configuracoes() {
+  const { intervaloMin, setIntervaloMin } = useApp()
   const cfg = getConfigApis()
   const [brapiToken, setBrapiToken] = useState(cfg.brapiToken || '')
   const [twelveDataKey, setTwelveDataKey] = useState(cfg.twelveDataKey || '')
@@ -28,6 +32,37 @@ export default function Configuracoes() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <DashboardCard
+        title="Atualização das cotações"
+        subtitle="De quanto em quanto tempo buscar os preços"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
+            <Timer size={18} />
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {OPCOES_INTERVALO.map((min) => (
+              <button
+                key={min}
+                onClick={() => setIntervaloMin(min)}
+                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                  intervaloMin === min
+                    ? 'border-brand bg-brand text-white shadow-brand'
+                    : 'border-line bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {min} min
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="mt-3 text-sm text-muted">
+          O app revalida sozinho nesse intervalo enquanto estiver aberto. Obs.: no plano gratuito da
+          brapi, a cotação da B3 tem ~15 min de atraso — abaixo disso, ações/FIIs não trazem preço
+          mais novo (cripto e dólar são quase em tempo real).
+        </p>
+      </DashboardCard>
+
       <DashboardCard
         title="Chaves de API (cotações)"
         subtitle="Opcional — liberam cotações automáticas de mais ativos"

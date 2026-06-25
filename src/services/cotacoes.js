@@ -12,8 +12,19 @@ const CACHE_KEY = 'cotacoes_cache_v1'
 const CFG_KEY = 'config_apis_v1'
 const HIST_KEY = 'historico_v1'
 
-// Validade do cache de cotações: 15 minutos.
+// Validade padrão do cache de cotações: 15 minutos.
 export const CACHE_TTL_MS = 15 * 60 * 1000
+const INTERVALO_KEY = 'intervaloMin_v1'
+
+// Intervalo de atualização (em minutos) escolhido pelo usuário. Padrão: 15.
+export function getIntervaloMin() {
+  try {
+    const v = JSON.parse(localStorage.getItem(INTERVALO_KEY))
+    return Number(v) > 0 ? Number(v) : 15
+  } catch {
+    return 15
+  }
+}
 
 const hoje = () => new Date().toISOString().slice(0, 10)
 
@@ -45,8 +56,9 @@ export async function buscarCotacoes(carteira, { forcar = false } = {}) {
   if (!forcar) {
     try {
       const c = JSON.parse(localStorage.getItem(CACHE_KEY))
-      // Reaproveita o cache se ele tiver menos de 15 minutos.
-      if (c && c.salvoEmMs && Date.now() - c.salvoEmMs < CACHE_TTL_MS) return c
+      // Reaproveita o cache se ele estiver dentro do intervalo escolhido.
+      const ttl = getIntervaloMin() * 60 * 1000
+      if (c && c.salvoEmMs && Date.now() - c.salvoEmMs < ttl) return c
     } catch {
       /* sem cache */
     }
@@ -182,6 +194,7 @@ export const CHAVES_STORAGE = [
   'alvoAtivos_v1',
   'metas_v1',
   'doutrina_v1',
+  INTERVALO_KEY,
   CACHE_KEY,
   CFG_KEY,
   HIST_KEY,
