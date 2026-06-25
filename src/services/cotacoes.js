@@ -12,6 +12,9 @@ const CACHE_KEY = 'cotacoes_cache_v1'
 const CFG_KEY = 'config_apis_v1'
 const HIST_KEY = 'historico_v1'
 
+// Validade do cache de cotações: 15 minutos.
+export const CACHE_TTL_MS = 15 * 60 * 1000
+
 const hoje = () => new Date().toISOString().slice(0, 10)
 
 // fetch com timeout (evita travar caso uma API esteja lenta/indisponível).
@@ -42,7 +45,8 @@ export async function buscarCotacoes(carteira, { forcar = false } = {}) {
   if (!forcar) {
     try {
       const c = JSON.parse(localStorage.getItem(CACHE_KEY))
-      if (c && c.data === hoje()) return c // já atualizado hoje
+      // Reaproveita o cache se ele tiver menos de 15 minutos.
+      if (c && c.salvoEmMs && Date.now() - c.salvoEmMs < CACHE_TTL_MS) return c
     } catch {
       /* sem cache */
     }
@@ -135,6 +139,7 @@ export async function buscarCotacoes(carteira, { forcar = false } = {}) {
 
   const resultado = {
     data: hoje(),
+    salvoEmMs: Date.now(),
     atualizadoEm: new Date().toISOString(),
     precos,
     cambioUsdBrl,

@@ -1,4 +1,12 @@
-import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useLocalState } from '../lib/armazenamento'
 import {
   carteiraInicial,
@@ -7,7 +15,7 @@ import {
   metasIniciais,
   doutrinaInicial,
 } from '../data/dadosIniciais'
-import { buscarCotacoes, getHistorico, registrarSnapshot } from '../services/cotacoes'
+import { buscarCotacoes, getHistorico, registrarSnapshot, CACHE_TTL_MS } from '../services/cotacoes'
 import { calcularPosicoes, resumoCarteira } from '../lib/calculos'
 
 const Ctx = createContext(null)
@@ -48,10 +56,15 @@ export function AppProvider({ children }) {
     [carteira],
   )
 
-  // Primeira carga (usa o cache do dia, se existir).
+  // Ref para a versão mais recente de `atualizar` (carteira atual).
+  const atualizarRef = useRef(atualizar)
+  atualizarRef.current = atualizar
+
+  // Primeira carga (usa cache se < 15 min) + revalidação automática a cada 15 min.
   useEffect(() => {
-    atualizar(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    atualizarRef.current(false)
+    const id = setInterval(() => atualizarRef.current(true), CACHE_TTL_MS)
+    return () => clearInterval(id)
   }, [])
 
   const posicoes = useMemo(

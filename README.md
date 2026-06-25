@@ -18,8 +18,8 @@ seu navegador (localStorage) — nada vai para servidores.
 
 ## Cotações (atualização diária automática)
 
-Ao abrir, o app busca as cotações **uma vez por dia** (com cache) e dá para forçar
-no botão **Atualizar** do topo. Fontes gratuitas:
+Ao abrir, o app busca as cotações e **revalida sozinho a cada 15 minutos** (com cache),
+e dá para forçar a qualquer momento no botão **Atualizar** do topo. Fontes gratuitas:
 
 | Ativo | Fonte | Precisa de chave? |
 |-------|-------|-------------------|

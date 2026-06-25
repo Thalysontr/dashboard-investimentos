@@ -81,7 +81,7 @@ export default function Sidebar({ open, onClose, active, onSelect }) {
           <div className="rounded-2xl bg-gradient-to-br from-brand to-brand-dark p-4 text-white">
             <p className="text-sm font-bold">Cotações ao vivo</p>
             <p className="mt-1 text-xs text-white/80">
-              Atualizadas automaticamente 1x ao dia. Adicione suas chaves em Configurações para
+              Atualizadas automaticamente a cada 15 min. Adicione suas chaves em Configurações para
               liberar todos os ativos.
             </p>
           </div>
