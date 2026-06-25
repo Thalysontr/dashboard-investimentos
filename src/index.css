@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans;
+  }
+}
+
+@layer utilities {
+  /* Thin, unobtrusive scrollbars that match the soft aesthetic */
+  .scrollbar-soft {
+    scrollbar-width: thin;
+    scrollbar-color: #d6deea transparent;
+  }
+  .scrollbar-soft::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-soft::-webkit-scrollbar-thumb {
+    background-color: #d6deea;
+    border-radius: 9999px;
+  }
+  .scrollbar-soft::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}

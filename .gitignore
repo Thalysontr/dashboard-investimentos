@@ -1,0 +1,21 @@
+# Dependências
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Ambiente / editores
+.env
+.env.local
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Cache
+.vite/
