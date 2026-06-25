@@ -21,16 +21,29 @@ const inputCls =
   'w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand/40 focus:bg-white focus:ring-4 focus:ring-brand/10'
 
 export default function Configuracoes() {
-  const { intervaloMin, setIntervaloMin } = useApp()
+  const { intervaloMin, setIntervaloMin, atualizar } = useApp()
   const cfg = getConfigApis()
   const [brapiToken, setBrapiToken] = useState(cfg.brapiToken || '')
   const [twelveDataKey, setTwelveDataKey] = useState(cfg.twelveDataKey || '')
   const [salvo, setSalvo] = useState(false)
 
-  function salvar() {
+  // Salva automaticamente assim que o usuário digita/cola (sem depender de botão).
+  function onBrapi(e) {
+    const v = e.target.value
+    setBrapiToken(v)
+    setConfigApis({ brapiToken: v.trim(), twelveDataKey: twelveDataKey.trim() })
+  }
+  function onTwelve(e) {
+    const v = e.target.value
+    setTwelveDataKey(v)
+    setConfigApis({ brapiToken: brapiToken.trim(), twelveDataKey: v.trim() })
+  }
+
+  async function salvarEAtualizar() {
     setConfigApis({ brapiToken: brapiToken.trim(), twelveDataKey: twelveDataKey.trim() })
     setSalvo(true)
     setTimeout(() => setSalvo(false), 2500)
+    await atualizar(true)
   }
 
   function resetar() {
@@ -139,24 +152,24 @@ export default function Configuracoes() {
           <span className="mb-1.5 flex items-center gap-1.5 font-medium text-slate-600">
             <KeyRound size={15} /> Token brapi.dev (ações B3 / FIIs)
           </span>
-          <input className={inputCls} value={brapiToken} onChange={(e) => setBrapiToken(e.target.value)} placeholder="cole seu token aqui" />
+          <input className={inputCls} value={brapiToken} onChange={onBrapi} placeholder="cole seu token aqui" />
         </label>
 
         <label className="mt-4 block text-sm">
           <span className="mb-1.5 flex items-center gap-1.5 font-medium text-slate-600">
             <KeyRound size={15} /> Chave Twelve Data (ações EUA)
           </span>
-          <input className={inputCls} value={twelveDataKey} onChange={(e) => setTwelveDataKey(e.target.value)} placeholder="cole sua chave aqui" />
+          <input className={inputCls} value={twelveDataKey} onChange={onTwelve} placeholder="cole sua chave aqui" />
         </label>
 
         <div className="mt-5 flex items-center gap-3">
           <button
-            onClick={salvar}
+            onClick={salvarEAtualizar}
             className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-brand transition hover:bg-brand-dark"
           >
-            <Save size={16} /> Salvar chaves
+            <Save size={16} /> Salvar e atualizar cotações
           </button>
-          {salvo && <span className="text-sm font-medium text-success">Salvo! Use “Atualizar” no topo.</span>}
+          {salvo && <span className="text-sm font-medium text-success">Salvo! Atualizando...</span>}
         </div>
       </DashboardCard>
 
