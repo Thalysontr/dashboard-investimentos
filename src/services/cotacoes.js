@@ -83,16 +83,32 @@ export async function buscarCotacoes(carteira, { forcar = false } = {}) {
     .filter((p) => p.classe === 'Ações BR' || p.classe === 'FII')
     .map((p) => p.ticker)
   if (brTickers.length) {
-    try {
-      const token = cfg.brapiToken ? `&token=${cfg.brapiToken}` : ''
-      const j = await fetchJson(
-        `https://brapi.dev/api/quote/${brTickers.join(',')}?range=1d&interval=1d${token}`,
+    const aplicar = (res) => {
+      if (res?.regularMarketPrice > 0) precos[res.symbol] = res.regularMarketPrice
+    }
+    if (cfg.brapiToken) {
+      // Com token: uma única requisição com todos os tickers.
+      try {
+        const j = await fetchJson(
+          `https://brapi.dev/api/quote/${brTickers.join(',')}?token=${cfg.brapiToken}`,
+        )
+        ;(j?.results || []).forEach(aplicar)
+      } catch {
+        /* ignora */
+      }
+    } else {
+      // Sem token: a brapi free recusa requisições com vários tickers,
+      // então buscamos um por um (os tickers gratuitos funcionam).
+      await Promise.all(
+        brTickers.map(async (tk) => {
+          try {
+            const j = await fetchJson(`https://brapi.dev/api/quote/${tk}`)
+            aplicar(j?.results?.[0])
+          } catch {
+            /* ignora ticker que exige token */
+          }
+        }),
       )
-      ;(j?.results || []).forEach((res) => {
-        if (res?.regularMarketPrice > 0) precos[res.symbol] = res.regularMarketPrice
-      })
-    } catch {
-      /* ignora */
     }
   }
 
