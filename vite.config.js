@@ -6,4 +6,6 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: './',
+  // Publicado no GitHub Pages a partir da pasta /docs da branch main.
+  build: { outDir: 'docs', emptyOutDir: true },
 })
