@@ -94,9 +94,15 @@ export async function buscarCotacoes(carteira, { forcar = false } = {}) {
     }
   }
 
-  // 3) Ações B3 e FIIs (brapi)
+  // 3) Ações B3, FIIs e ETFs de cripto da B3 (ex.: HASH11) via brapi.
+  // Cripto sem idCoingecko = ETF listado na B3, então também busca aqui.
   const brTickers = carteira
-    .filter((p) => p.classe === 'Ações BR' || p.classe === 'FII')
+    .filter(
+      (p) =>
+        p.classe === 'Ações BR' ||
+        p.classe === 'FII' ||
+        (p.classe === 'Cripto' && !p.idCoingecko),
+    )
     .map((p) => p.ticker)
   if (brTickers.length) {
     const aplicar = (res) => {
