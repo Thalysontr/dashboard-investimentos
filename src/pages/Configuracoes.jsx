@@ -21,7 +21,7 @@ const inputCls =
   'w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand/40 focus:bg-white focus:ring-4 focus:ring-brand/10'
 
 export default function Configuracoes() {
-  const { intervaloMin, setIntervaloMin, atualizar } = useApp()
+  const { intervaloMin, setIntervaloMin, atualizar, pushNow } = useApp()
   const cfg = getConfigApis()
   const [brapiToken, setBrapiToken] = useState(cfg.brapiToken || '')
   const [twelveDataKey, setTwelveDataKey] = useState(cfg.twelveDataKey || '')
@@ -43,6 +43,7 @@ export default function Configuracoes() {
     setConfigApis({ brapiToken: brapiToken.trim(), twelveDataKey: twelveDataKey.trim() })
     setSalvo(true)
     setTimeout(() => setSalvo(false), 2500)
+    pushNow?.() // sincroniza as chaves com a nuvem
     await atualizar(true)
   }
 
