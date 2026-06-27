@@ -135,6 +135,7 @@ export function AppProvider({ children }) {
   // -------------------------------------------------------------- Cotações
   const [cot, setCot] = useState({
     precos: {},
+    variacoes: {},
     cambioUsdBrl: 5,
     atualizadoEm: null,
     carregando: true,
@@ -149,6 +150,7 @@ export function AppProvider({ children }) {
         const r = await buscarCotacoes(carteira, { forcar })
         setCot({
           precos: r.precos,
+          variacoes: r.variacoes || {},
           cambioUsdBrl: r.cambioUsdBrl,
           atualizadoEm: r.atualizadoEm,
           carregando: false,
@@ -172,8 +174,8 @@ export function AppProvider({ children }) {
   }, [intervaloMin])
 
   const posicoes = useMemo(
-    () => calcularPosicoes(carteira, cot.precos, cot.cambioUsdBrl),
-    [carteira, cot.precos, cot.cambioUsdBrl],
+    () => calcularPosicoes(carteira, cot.precos, cot.cambioUsdBrl, cot.variacoes),
+    [carteira, cot.precos, cot.cambioUsdBrl, cot.variacoes],
   )
   const resumo = useMemo(() => resumoCarteira(posicoes), [posicoes])
 

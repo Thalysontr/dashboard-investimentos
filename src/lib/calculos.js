@@ -26,7 +26,7 @@ export const CORES_CLASSE = {
 // Calcula métricas de cada posição.
 // precos: { TICKER: precoNaMoedaDoAtivo }
 // cambioUsdBrl: cotação do dólar em reais
-export function calcularPosicoes(carteira, precos = {}, cambioUsdBrl = 1) {
+export function calcularPosicoes(carteira, precos = {}, cambioUsdBrl = 1, variacoes = {}) {
   return carteira.map((p) => {
     const cotacao = precos?.[p.ticker]
     const temCotacao = typeof cotacao === 'number' && cotacao > 0
@@ -40,6 +40,10 @@ export function calcularPosicoes(carteira, precos = {}, cambioUsdBrl = 1) {
     const lucro = valorMercado - custoBRL
     const lucroPct = custoBRL > 0 ? (lucro / custoBRL) * 100 : 0
 
+    // Variação do dia (%) e viés de compra com base no preço-teto.
+    const variacao = typeof variacoes?.[p.ticker] === 'number' ? variacoes[p.ticker] : null
+    const vies = p.precoTeto > 0 ? (precoAtual <= p.precoTeto ? 'Comprar' : 'Aguardar') : null
+
     return {
       ...p,
       precoAtual,
@@ -49,6 +53,8 @@ export function calcularPosicoes(carteira, precos = {}, cambioUsdBrl = 1) {
       lucro,
       lucroPct,
       temCotacao,
+      variacao,
+      vies,
     }
   })
 }

@@ -66,6 +66,7 @@ export async function buscarCotacoes(carteira, { forcar = false } = {}) {
 
   const cfg = getConfigApis()
   const precos = {}
+  const variacoes = {} // variação % do dia, por ticker
   let cambioUsdBrl = 5.0
 
   // 1) Câmbio USD/BRL
@@ -83,11 +84,13 @@ export async function buscarCotacoes(carteira, { forcar = false } = {}) {
     try {
       const ids = [...new Set(cryptos.map((p) => p.idCoingecko))].join(',')
       const j = await fetchJson(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl`,
+        `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl&include_24hr_change=true`,
       )
       cryptos.forEach((p) => {
         const v = j?.[p.idCoingecko]?.brl
         if (v > 0) precos[p.ticker] = v
+        const ch = j?.[p.idCoingecko]?.brl_24h_change
+        if (typeof ch === 'number') variacoes[p.ticker] = ch
       })
     } catch {
       /* ignora */
@@ -107,6 +110,8 @@ export async function buscarCotacoes(carteira, { forcar = false } = {}) {
   if (brTickers.length) {
     const aplicar = (res) => {
       if (res?.regularMarketPrice > 0) precos[res.symbol] = res.regularMarketPrice
+      if (typeof res?.regularMarketChangePercent === 'number')
+        variacoes[res.symbol] = res.regularMarketChangePercent
     }
     const token = cfg.brapiToken
 
@@ -167,6 +172,7 @@ export async function buscarCotacoes(carteira, { forcar = false } = {}) {
     salvoEmMs: Date.now(),
     atualizadoEm: new Date().toISOString(),
     precos,
+    variacoes,
     cambioUsdBrl,
   }
   try {
