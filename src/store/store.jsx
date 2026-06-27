@@ -126,6 +126,44 @@ export function AppProvider({ children }) {
     return () => clearTimeout(t)
   }, [carteira, alvo, alvoAtivos, metas, doutrina, intervaloMin, session, pushToCloud])
 
+  // Sincronização contínua: busca mudanças da nuvem (outro dispositivo) e aplica.
+  const syncFromCloud = useCallback(async () => {
+    if (!supabase || !session || !cloudLoaded.current) return
+    try {
+      const { data } = await supabase.auth.getUser()
+      const d = data?.user?.user_metadata?.dashboard
+      if (!d) return
+      const dif = (a, b) => JSON.stringify(a ?? null) !== JSON.stringify(b ?? null)
+      let mudou = false
+      skipPush.current = true
+      if (d.carteira_v1 && dif(d.carteira_v1, carteira)) { setCarteira(d.carteira_v1); mudou = true }
+      if (d.alvo_v1 && dif(d.alvo_v1, alvo)) { setAlvo(d.alvo_v1); mudou = true }
+      if (d.alvoAtivos_v1 && dif(d.alvoAtivos_v1, alvoAtivos)) { setAlvoAtivos(d.alvoAtivos_v1); mudou = true }
+      if (d.metas_v1 && dif(d.metas_v1, metas)) { setMetas(d.metas_v1); mudou = true }
+      if (typeof d.doutrina_v1 === 'string' && d.doutrina_v1 !== doutrina) { setDoutrina(d.doutrina_v1); mudou = true }
+      if (d.intervaloMin_v1 && d.intervaloMin_v1 !== intervaloMin) { setIntervaloMin(d.intervaloMin_v1); mudou = true }
+      if (d.config_apis_v1) localStorage.setItem('config_apis_v1', JSON.stringify(d.config_apis_v1))
+      if (!mudou) skipPush.current = false
+    } catch {
+      /* ignora */
+    }
+  }, [session, carteira, alvo, alvoAtivos, metas, doutrina, intervaloMin])
+
+  const syncRef = useRef(syncFromCloud)
+  syncRef.current = syncFromCloud
+  useEffect(() => {
+    if (!supabase) return
+    const fire = () => {
+      if (document.visibilityState === 'visible') syncRef.current()
+    }
+    document.addEventListener('visibilitychange', fire)
+    const id = setInterval(fire, 30000)
+    return () => {
+      document.removeEventListener('visibilitychange', fire)
+      clearInterval(id)
+    }
+  }, [])
+
   const signIn = (email, password) =>
     supabase.auth.signInWithPassword({ email: email.trim(), password })
   const signUp = (email, password) => supabase.auth.signUp({ email: email.trim(), password })
