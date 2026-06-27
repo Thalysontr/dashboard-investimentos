@@ -75,6 +75,11 @@ export default function Carteira() {
   const [aberto, setAberto] = useState(false)
   const [editId, setEditId] = useState(null)
   const [form, setForm] = useState(vazia)
+  const [mostrarTodos, setMostrarTodos] = useState(false)
+
+  // Por padrão mostra só o que você possui; o toggle inclui os recomendados (qtd 0).
+  const visiveis = mostrarTodos ? posicoes : posicoes.filter((p) => p.quantidade > 0)
+  const naoComprados = posicoes.filter((p) => p.quantidade <= 0).length
 
   // Modal de compra (aporte) com cálculo de preço médio.
   const [compraAberto, setCompraAberto] = useState(false)
@@ -168,6 +173,19 @@ export default function Carteira() {
           </div>
         </div>
         <div className="flex gap-2">
+          {naoComprados > 0 && (
+            <button
+              onClick={() => setMostrarTodos((v) => !v)}
+              className={`inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition ${
+                mostrarTodos
+                  ? 'border-brand bg-brand-soft text-brand-dark'
+                  : 'border-line bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+              title="Inclui os ativos recomendados que você ainda não comprou"
+            >
+              {mostrarTodos ? 'Só os que tenho' : `Mostrar todos (+${naoComprados})`}
+            </button>
+          )}
           <button
             onClick={() => atualizar(true)}
             className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-white px-3 text-sm font-semibold text-ink transition hover:bg-slate-50"
@@ -203,7 +221,7 @@ export default function Carteira() {
               </tr>
             </thead>
             <tbody>
-              {posicoes.map((p, i) => (
+              {visiveis.map((p, i) => (
                 <tr key={p.id} className="border-b border-line/70 transition hover:bg-canvas last:border-0">
                   <td className="px-4 py-3 text-center font-bold text-slate-400 sm:px-5">{i + 1}</td>
                   <td className="px-4 py-3 sm:px-5">
@@ -260,10 +278,10 @@ export default function Carteira() {
                   </td>
                 </tr>
               ))}
-              {posicoes.length === 0 && (
+              {visiveis.length === 0 && (
                 <tr>
                   <td colSpan={10} className="px-6 py-12 text-center text-sm text-muted">
-                    Nenhum ativo ainda. Clique em “Adicionar ativo” para começar.
+                    Nenhum ativo aqui. Clique em “Adicionar ativo” para começar.
                   </td>
                 </tr>
               )}
