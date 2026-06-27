@@ -84,24 +84,33 @@ export function AppProvider({ children }) {
     setSincronizando(false)
   }, [session])
 
-  // Ao logar: lê os dados do perfil; se não houver, migra os dados locais.
+  // Ao logar: busca os dados FRESCOS do servidor (não a cópia da sessão, que
+  // pode estar velha) e aplica; se não houver, migra os dados locais.
   useEffect(() => {
     if (!supabase || !session || cloudLoaded.current) return
-    const d = session.user?.user_metadata?.dashboard
-    if (d && typeof d === 'object' && Object.keys(d).length) {
-      skipPush.current = true
-      if (d.carteira_v1) setCarteira(d.carteira_v1)
-      if (d.alvo_v1) setAlvo(d.alvo_v1)
-      if (d.alvoAtivos_v1) setAlvoAtivos(d.alvoAtivos_v1)
-      if (d.metas_v1) setMetas(d.metas_v1)
-      if (typeof d.doutrina_v1 === 'string') setDoutrina(d.doutrina_v1)
-      if (d.intervaloMin_v1) setIntervaloMin(d.intervaloMin_v1)
-      if (d.config_apis_v1) localStorage.setItem('config_apis_v1', JSON.stringify(d.config_apis_v1))
-      cloudLoaded.current = true
-    } else {
-      // Primeira vez nesta conta: sobe o que já existe localmente.
-      cloudLoaded.current = true
-      pushToCloud()
+    let cancel = false
+    ;(async () => {
+      const { data } = await supabase.auth.getUser()
+      if (cancel) return
+      const d = data?.user?.user_metadata?.dashboard
+      if (d && typeof d === 'object' && Object.keys(d).length) {
+        skipPush.current = true
+        if (d.carteira_v1) setCarteira(d.carteira_v1)
+        if (d.alvo_v1) setAlvo(d.alvo_v1)
+        if (d.alvoAtivos_v1) setAlvoAtivos(d.alvoAtivos_v1)
+        if (d.metas_v1) setMetas(d.metas_v1)
+        if (typeof d.doutrina_v1 === 'string') setDoutrina(d.doutrina_v1)
+        if (d.intervaloMin_v1) setIntervaloMin(d.intervaloMin_v1)
+        if (d.config_apis_v1) localStorage.setItem('config_apis_v1', JSON.stringify(d.config_apis_v1))
+        cloudLoaded.current = true
+      } else {
+        // Primeira vez nesta conta: sobe o que já existe localmente.
+        cloudLoaded.current = true
+        pushToCloud()
+      }
+    })()
+    return () => {
+      cancel = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
